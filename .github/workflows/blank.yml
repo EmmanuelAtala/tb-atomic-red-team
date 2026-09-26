@@ -96,14 +96,23 @@ jobs:
             --filters "Name=group-name,Values=default" "Name=vpc-id,Values=$VPC_ID" \
             --query 'SecurityGroups[0].GroupId' --output text)
 
-          if [ "${{ inputs.os }}" = "windows" ]; then
+          GOLDEN_AMI=$(aws ssm get-parameter \
+            --name "/atomic-lab/golden-ami/${{ inputs.os }}" \
+            --query 'Parameter.Value' --output text 2>/dev/null || echo "")
+
+          if [ -n "$GOLDEN_AMI" ] && [ "$GOLDEN_AMI" != "None" ]; then
+            AMI_ID="$GOLDEN_AMI"
+            echo "Using golden AMI with CDR agent pre-installed: $AMI_ID"
+          elif [ "${{ inputs.os }}" = "windows" ]; then
             AMI_ID=$(aws ssm get-parameters \
               --names /aws/service/ami-windows-latest/Windows_Server-2022-English-Full-Base \
               --query 'Parameters[0].Value' --output text)
+            echo "No golden AMI found, using stock Windows AMI: $AMI_ID"
           else
             AMI_ID=$(aws ssm get-parameters \
               --names /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64 \
               --query 'Parameters[0].Value' --output text)
+            echo "No golden AMI found, using stock Amazon Linux AMI: $AMI_ID"
           fi
 
           INSTANCE_ID=$(aws ec2 run-instances \
