@@ -139,6 +139,8 @@ jobs:
             echo "Instance never registered with SSM (last status: $STATUS)." >&2
             exit 1
           fi
+          echo "SSM reports Online; waiting 30s extra for the agent to be ready to execute commands..."
+          sleep 30
 
       - name: Bootstrap execution framework
         id: bootstrap
@@ -162,20 +164,32 @@ jobs:
 
           PARAMS_JSON=$(printf '%s\n' "${LINES[@]}" | jq -R . | jq -s '{commands: .}')
 
-          COMMAND_ID=$(aws ssm send-command \
-            --instance-ids "$INSTANCE_ID" \
-            --document-name "$DOCUMENT" \
-            --parameters "$PARAMS_JSON" \
-            --query "Command.CommandId" --output text)
+          send_and_wait() {
+            COMMAND_ID=$(aws ssm send-command \
+              --instance-ids "$INSTANCE_ID" \
+              --document-name "$DOCUMENT" \
+              --parameters "$PARAMS_JSON" \
+              --query "Command.CommandId" --output text)
 
-          for i in $(seq 1 60); do
-            STATUS=$(aws ssm get-command-invocation \
-              --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID" \
-              --query "Status" --output text 2>/dev/null || echo "Pending")
-            echo "Bootstrap attempt $i: status=$STATUS"
-            if [ "$STATUS" = "Success" ] || [ "$STATUS" = "Failed" ]; then break; fi
-            sleep 10
-          done
+            for i in $(seq 1 60); do
+              STATUS=$(aws ssm get-command-invocation \
+                --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID" \
+                --query "Status" --output text 2>/dev/null || echo "Pending")
+              echo "Bootstrap attempt $i: status=$STATUS"
+              case "$STATUS" in
+                Success|Failed|Cancelled|TimedOut) break ;;
+              esac
+              sleep 10
+            done
+          }
+
+          send_and_wait
+
+          if [ "$STATUS" = "TimedOut" ]; then
+            echo "First attempt timed out (likely SSM agent not fully ready yet). Retrying once..."
+            sleep 15
+            send_and_wait
+          fi
 
           aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID" \
             --query "StandardOutputContent" --output text
@@ -183,7 +197,7 @@ jobs:
             --query "StandardErrorContent" --output text
 
           if [ "$STATUS" != "Success" ]; then
-            echo "Bootstrap failed." >&2
+            echo "Bootstrap failed (final status: $STATUS)." >&2
             exit 1
           fi
 
@@ -227,7 +241,9 @@ jobs:
               STATUS=$(aws ssm get-command-invocation \
                 --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID" \
                 --query "Status" --output text 2>/dev/null || echo "Pending")
-              if [ "$STATUS" = "Success" ] || [ "$STATUS" = "Failed" ]; then break; fi
+              case "$STATUS" in
+                Success|Failed|Cancelled|TimedOut) break ;;
+              esac
               sleep 10
             done
 
