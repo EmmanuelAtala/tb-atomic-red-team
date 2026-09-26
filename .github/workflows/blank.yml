@@ -151,6 +151,8 @@ jobs:
           if [ "${{ inputs.os }}" = "windows" ]; then
             DOCUMENT="AWS-RunPowerShellScript"
             LINES=(
+              'if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) { Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force }'
+              'if (-not (Get-Module -ListAvailable -Name powershell-yaml)) { Install-Module -Name powershell-yaml -Force -Scope AllUsers -Repository PSGallery }'
               'if (-not (Test-Path "C:\AtomicRedTeam\invoke-atomicredteam\Invoke-AtomicRedTeam.psd1")) { IEX (IWR "https://raw.githubusercontent.com/redcanaryco/invoke-atomicredteam/master/install-atomicredteam.ps1" -UseBasicParsing); Install-AtomicRedTeam -getAtomics -Force -noPayloads }'
               'Import-Module "C:\AtomicRedTeam\invoke-atomicredteam\Invoke-AtomicRedTeam.psd1" -Force'
             )
@@ -162,6 +164,8 @@ jobs:
             # that conflicts with YAML's own indentation stripping), then
             # base64-encode it to avoid nested-quoting issues downstream.
             PS_LINES=(
+              'if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) { Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force }'
+              'if (-not (Get-Module -ListAvailable -Name powershell-yaml)) { Install-Module -Name powershell-yaml -Force -Scope AllUsers -Repository PSGallery }'
               'if (-not ((Test-Path "/opt/AtomicRedTeam/invoke-atomicredteam/Invoke-AtomicRedTeam.psd1") -and (Test-Path "/opt/AtomicRedTeam/atomics"))) {'
               '  IEX (IWR "https://raw.githubusercontent.com/redcanaryco/invoke-atomicredteam/master/install-atomicredteam.ps1" -UseBasicParsing)'
               '  Install-AtomicRedTeam -InstallPath "/opt/AtomicRedTeam" -getAtomics -Force -noPayloads -Verbose -ErrorAction Continue'
