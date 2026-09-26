@@ -155,8 +155,8 @@ jobs:
           else
             DOCUMENT="AWS-RunShellScript"
             LINES=(
-              'if [ ! -f /opt/atomic-venv/bin/atomic-operator ]; then python3 -m venv /opt/atomic-venv && /opt/atomic-venv/bin/pip install --upgrade pip && /opt/atomic-venv/bin/pip install atomic-operator attrs; fi'
-              'if [ ! -d /opt/atomics ]; then /opt/atomic-venv/bin/atomic-operator get_atomics --destination /opt/atomics; fi'
+              'if ! command -v pwsh &> /dev/null; then PS_RPM_URL=$(curl -s https://api.github.com/repos/PowerShell/PowerShell/releases/latest | grep -o "https://[^\"]*rh.x86_64.rpm" | head -n1); curl -sSL "$PS_RPM_URL" -o /tmp/powershell.rpm; dnf install -y /tmp/powershell.rpm; fi'
+              'pwsh -Command "if (-not (Test-Path \"/root/AtomicRedTeam/invoke-atomicredteam/Invoke-AtomicRedTeam.psd1\")) { IEX (IWR \"https://raw.githubusercontent.com/redcanaryco/invoke-atomicredteam/master/install-atomicredteam.ps1\" -UseBasicParsing); Install-AtomicRedTeam -getAtomics -Force -noPayloads }"'
             )
           fi
 
@@ -211,8 +211,7 @@ jobs:
             else
               DOCUMENT="AWS-RunShellScript"
               LINES=(
-                'ATOMICS_PATH=$(find /opt/atomics -maxdepth 1 -type d -iname "redcanaryco-atomic-red-team-*" | head -n1)'
-                "/opt/atomic-venv/bin/atomic-operator run --atomics-path \"\$ATOMICS_PATH\" --techniques $TECH"
+                "pwsh -Command \"Import-Module '/root/AtomicRedTeam/invoke-atomicredteam/Invoke-AtomicRedTeam.psd1' -Force; Invoke-AtomicTest $TECH\""
               )
             fi
 
