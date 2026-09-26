@@ -279,5 +279,3 @@ jobs:
         if: always() && inputs.terminate_after == 'yes'
         run: |
           aws ec2 terminate-instances --instance-ids "${{ steps.launch.outputs.instance_id }}" || true
-        run: |
-          aws ec2 terminate-instances --instance-ids "${{ steps.launch.outputs.instance_id }}" || true
