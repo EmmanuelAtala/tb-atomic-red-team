@@ -229,12 +229,18 @@ jobs:
           set -euo pipefail
           INSTANCE_ID="${{ steps.launch.outputs.instance_id }}"
 
-          if [ ! -f atomic-techniques.txt ]; then
-            echo "atomic-techniques.txt not found in repo root" >&2
+          if [ "${{ inputs.os }}" = "windows" ]; then
+            TECHNIQUES_FILE="atomic-techniques-windows.txt"
+          else
+            TECHNIQUES_FILE="atomic-techniques-linux.txt"
+          fi
+
+          if [ ! -f "$TECHNIQUES_FILE" ]; then
+            echo "$TECHNIQUES_FILE not found in repo root" >&2
             exit 1
           fi
 
-          TECHNIQUES=$(grep -v '^\s*#' atomic-techniques.txt | grep -v '^\s*$')
+          TECHNIQUES=$(grep -v '^\s*#' "$TECHNIQUES_FILE" | grep -v '^\s*$')
 
           for TECH in $TECHNIQUES; do
             echo "=== Running $TECH ==="
