@@ -157,20 +157,21 @@ jobs:
           else
             DOCUMENT="AWS-RunShellScript"
 
-            # Build the PowerShell script as a plain bash variable first (no nested
-            # quoting), then base64-encode it. This avoids fragile multi-layer
-            # quoting when embedding it into the SSM commands JSON array below.
-            PS_SCRIPT=$(cat << 'PSEOF'
-if (-not ((Test-Path "/opt/AtomicRedTeam/invoke-atomicredteam/Invoke-AtomicRedTeam.psd1") -and (Test-Path "/opt/AtomicRedTeam/atomics"))) {
-  IEX (IWR "https://raw.githubusercontent.com/redcanaryco/invoke-atomicredteam/master/install-atomicredteam.ps1" -UseBasicParsing)
-  Install-AtomicRedTeam -InstallPath "/opt/AtomicRedTeam" -getAtomics -Force -noPayloads -Verbose -ErrorAction Continue
-}
-Write-Host "atomics folder exists: $(Test-Path '/opt/AtomicRedTeam/atomics')"
-if (Test-Path "/opt/AtomicRedTeam/atomics") {
-  Write-Host "atomics item count: $((Get-ChildItem '/opt/AtomicRedTeam/atomics').Count)"
-}
-PSEOF
+            # Build the PowerShell script as an array of plain single-quoted lines
+            # (no heredoc - heredoc terminators are indentation-strict in a way
+            # that conflicts with YAML's own indentation stripping), then
+            # base64-encode it to avoid nested-quoting issues downstream.
+            PS_LINES=(
+              'if (-not ((Test-Path "/opt/AtomicRedTeam/invoke-atomicredteam/Invoke-AtomicRedTeam.psd1") -and (Test-Path "/opt/AtomicRedTeam/atomics"))) {'
+              '  IEX (IWR "https://raw.githubusercontent.com/redcanaryco/invoke-atomicredteam/master/install-atomicredteam.ps1" -UseBasicParsing)'
+              '  Install-AtomicRedTeam -InstallPath "/opt/AtomicRedTeam" -getAtomics -Force -noPayloads -Verbose -ErrorAction Continue'
+              '}'
+              'Write-Host "atomics folder exists: $(Test-Path '"'"'/opt/AtomicRedTeam/atomics'"'"')"'
+              'if (Test-Path "/opt/AtomicRedTeam/atomics") {'
+              '  Write-Host "atomics item count: $((Get-ChildItem '"'"'/opt/AtomicRedTeam/atomics'"'"').Count)"'
+              '}'
             )
+            PS_SCRIPT=$(printf '%s\n' "${PS_LINES[@]}")
             PS_SCRIPT_B64=$(printf '%s' "$PS_SCRIPT" | base64 -w0)
 
             LINES=(
@@ -276,5 +277,7 @@ PSEOF
 
       - name: Terminate instance
         if: always() && inputs.terminate_after == 'yes'
+        run: |
+          aws ec2 terminate-instances --instance-ids "${{ steps.launch.outputs.instance_id }}" || true
         run: |
           aws ec2 terminate-instances --instance-ids "${{ steps.launch.outputs.instance_id }}" || true
