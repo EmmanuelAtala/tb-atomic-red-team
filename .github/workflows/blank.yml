@@ -212,7 +212,7 @@ jobs:
               DOCUMENT="AWS-RunShellScript"
               LINES=(
                 'ATOMICS_PATH=$(find /opt/atomics -maxdepth 1 -type d -iname "redcanaryco-atomic-red-team-*" | head -n1)'
-                "/opt/atomic-venv/bin/atomic-operator run --atomics-path \"\$ATOMICS_PATH\" --techniques $TECH --check_dependencies"
+                "/opt/atomic-venv/bin/atomic-operator run --atomics-path \"\$ATOMICS_PATH\" --techniques $TECH"
               )
             fi
 
