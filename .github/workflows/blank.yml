@@ -155,7 +155,7 @@ jobs:
           else
             DOCUMENT="AWS-RunShellScript"
             LINES=(
-              'if [ ! -f /opt/atomic-venv/bin/atomic-operator ]; then python3 -m venv /opt/atomic-venv && /opt/atomic-venv/bin/pip install --upgrade pip && /opt/atomic-venv/bin/pip install atomic-operator; fi'
+              'if [ ! -f /opt/atomic-venv/bin/atomic-operator ]; then python3 -m venv /opt/atomic-venv && /opt/atomic-venv/bin/pip install --upgrade pip && /opt/atomic-venv/bin/pip install atomic-operator attrs; fi'
               'if [ ! -d /opt/atomics ]; then /opt/atomic-venv/bin/atomic-operator get_atomics --destination /opt/atomics; fi'
             )
           fi
