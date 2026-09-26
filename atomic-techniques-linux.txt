@@ -1,0 +1,9 @@
+# One MITRE technique ID per line. Lines starting with # and blank lines are ignored.
+# These run only when the workflow is triggered with os=linux.
+# Every ID here must have at least one Linux/macOS-tagged test in the atomics repo,
+# and must be a real leaf ID (some parent techniques, like T1087, have no standalone
+# tests once split into sub-techniques - use the specific sub-technique ID instead).
+
+T1059.004
+T1082
+T1087.004

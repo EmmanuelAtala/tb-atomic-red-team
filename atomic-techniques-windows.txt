@@ -1,0 +1,9 @@
+# One MITRE technique ID per line. Lines starting with # and blank lines are ignored.
+# These run only when the workflow is triggered with os=windows.
+# Every ID here must have at least one Windows-tagged test in the atomics repo,
+# and must be a real leaf ID (some parent techniques, like T1087, have no standalone
+# tests once split into sub-techniques - use the specific sub-technique ID instead).
+
+T1059.001
+T1082
+T1087.004
