@@ -156,9 +156,27 @@ jobs:
             )
           else
             DOCUMENT="AWS-RunShellScript"
+
+            # Build the PowerShell script as a plain bash variable first (no nested
+            # quoting), then base64-encode it. This avoids fragile multi-layer
+            # quoting when embedding it into the SSM commands JSON array below.
+            PS_SCRIPT=$(cat << 'PSEOF'
+if (-not ((Test-Path "/opt/AtomicRedTeam/invoke-atomicredteam/Invoke-AtomicRedTeam.psd1") -and (Test-Path "/opt/AtomicRedTeam/atomics"))) {
+  IEX (IWR "https://raw.githubusercontent.com/redcanaryco/invoke-atomicredteam/master/install-atomicredteam.ps1" -UseBasicParsing)
+  Install-AtomicRedTeam -InstallPath "/opt/AtomicRedTeam" -getAtomics -Force -noPayloads -Verbose -ErrorAction Continue
+}
+Write-Host "atomics folder exists: $(Test-Path '/opt/AtomicRedTeam/atomics')"
+if (Test-Path "/opt/AtomicRedTeam/atomics") {
+  Write-Host "atomics item count: $((Get-ChildItem '/opt/AtomicRedTeam/atomics').Count)"
+}
+PSEOF
+            )
+            PS_SCRIPT_B64=$(printf '%s' "$PS_SCRIPT" | base64 -w0)
+
             LINES=(
               'if ! command -v pwsh &> /dev/null; then PS_RPM_URL=$(curl -s --max-time 15 https://api.github.com/repos/PowerShell/PowerShell/releases/latest | grep -o "https://[^\"]*rh.x86_64.rpm" | head -n1); echo "Resolved PowerShell RPM URL: $PS_RPM_URL"; curl -sSL --max-time 60 "$PS_RPM_URL" -o /tmp/powershell.rpm; ls -la /tmp/powershell.rpm; dnf install -y --nogpgcheck /tmp/powershell.rpm < /dev/null; fi'
-              'pwsh -Command "if (-not (Test-Path \"/opt/AtomicRedTeam/invoke-atomicredteam/Invoke-AtomicRedTeam.psd1\")) { IEX (IWR \"https://raw.githubusercontent.com/redcanaryco/invoke-atomicredteam/master/install-atomicredteam.ps1\" -UseBasicParsing); Install-AtomicRedTeam -InstallPath \"/opt/AtomicRedTeam\" -getAtomics -Force -noPayloads }" < /dev/null'
+              "echo $PS_SCRIPT_B64 | base64 -d > /tmp/bootstrap.ps1"
+              'pwsh -File /tmp/bootstrap.ps1 < /dev/null'
             )
           fi
 
