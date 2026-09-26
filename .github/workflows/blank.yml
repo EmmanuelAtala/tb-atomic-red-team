@@ -1,4 +1,5 @@
 name: Atomic Red Team
+
 on:
   workflow_dispatch:
     inputs:
@@ -148,15 +149,14 @@ jobs:
           if [ "${{ inputs.os }}" = "windows" ]; then
             DOCUMENT="AWS-RunPowerShellScript"
             LINES=(
-              'if (-not (Get-Module -ListAvailable -Name "invoke-atomicredteam")) { IEX (IWR "https://raw.githubusercontent.com/redcanaryco/invoke-atomicredteam/master/install-atomicredteam.ps1" -UseBasicParsing); Install-AtomicRedTeam -getAtomics -Force -noPayloads }'
-              'Import-Module "invoke-atomicredteam" -Force'
+              'if (-not (Test-Path "C:\AtomicRedTeam\invoke-atomicredteam\Invoke-AtomicRedTeam.psd1")) { IEX (IWR "https://raw.githubusercontent.com/redcanaryco/invoke-atomicredteam/master/install-atomicredteam.ps1" -UseBasicParsing); Install-AtomicRedTeam -getAtomics -Force -noPayloads }'
+              'Import-Module "C:\AtomicRedTeam\invoke-atomicredteam\Invoke-AtomicRedTeam.psd1" -Force'
             )
           else
             DOCUMENT="AWS-RunShellScript"
             LINES=(
-              'dnf install -y python3-pip'
-              'pip3 install atomic-operator'
-              'if [ ! -d /opt/atomics ]; then atomic-operator get_atomics --destination /opt/atomics; fi'
+              'if [ ! -f /opt/atomic-venv/bin/atomic-operator ]; then python3 -m venv /opt/atomic-venv && /opt/atomic-venv/bin/pip install --upgrade pip && /opt/atomic-venv/bin/pip install atomic-operator; fi'
+              'if [ ! -d /opt/atomics ]; then /opt/atomic-venv/bin/atomic-operator get_atomics --destination /opt/atomics; fi'
             )
           fi
 
@@ -205,14 +205,14 @@ jobs:
             if [ "${{ inputs.os }}" = "windows" ]; then
               DOCUMENT="AWS-RunPowerShellScript"
               LINES=(
-                'Import-Module "invoke-atomicredteam" -Force'
+                'Import-Module "C:\AtomicRedTeam\invoke-atomicredteam\Invoke-AtomicRedTeam.psd1" -Force'
                 "Invoke-AtomicTest $TECH"
               )
             else
               DOCUMENT="AWS-RunShellScript"
               LINES=(
                 'ATOMICS_PATH=$(find /opt/atomics -maxdepth 1 -type d -iname "redcanaryco-atomic-red-team-*" | head -n1)'
-                "atomic-operator run --atomics-path \"\$ATOMICS_PATH\" --techniques $TECH --check_dependencies"
+                "/opt/atomic-venv/bin/atomic-operator run --atomics-path \"\$ATOMICS_PATH\" --techniques $TECH --check_dependencies"
               )
             fi
 
