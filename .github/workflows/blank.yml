@@ -155,8 +155,8 @@ jobs:
           else
             DOCUMENT="AWS-RunShellScript"
             LINES=(
-              'if ! command -v pwsh &> /dev/null; then PS_RPM_URL=$(curl -s https://api.github.com/repos/PowerShell/PowerShell/releases/latest | grep -o "https://[^\"]*rh.x86_64.rpm" | head -n1); curl -sSL "$PS_RPM_URL" -o /tmp/powershell.rpm; dnf install -y /tmp/powershell.rpm; fi'
-              'pwsh -Command "if (-not (Test-Path \"/root/AtomicRedTeam/invoke-atomicredteam/Invoke-AtomicRedTeam.psd1\")) { IEX (IWR \"https://raw.githubusercontent.com/redcanaryco/invoke-atomicredteam/master/install-atomicredteam.ps1\" -UseBasicParsing); Install-AtomicRedTeam -getAtomics -Force -noPayloads }"'
+              'if ! command -v pwsh &> /dev/null; then PS_RPM_URL=$(curl -s --max-time 15 https://api.github.com/repos/PowerShell/PowerShell/releases/latest | grep -o "https://[^\"]*rh.x86_64.rpm" | head -n1); echo "Resolved PowerShell RPM URL: $PS_RPM_URL"; curl -sSL --max-time 60 "$PS_RPM_URL" -o /tmp/powershell.rpm; ls -la /tmp/powershell.rpm; dnf install -y --nogpgcheck /tmp/powershell.rpm < /dev/null; fi'
+              'pwsh -Command "if (-not (Test-Path \"/root/AtomicRedTeam/invoke-atomicredteam/Invoke-AtomicRedTeam.psd1\")) { IEX (IWR \"https://raw.githubusercontent.com/redcanaryco/invoke-atomicredteam/master/install-atomicredteam.ps1\" -UseBasicParsing); Install-AtomicRedTeam -getAtomics -Force -noPayloads }" < /dev/null'
             )
           fi
 
