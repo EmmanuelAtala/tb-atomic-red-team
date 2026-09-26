@@ -1,7 +1,0 @@
-# One MITRE technique ID per line. Lines starting with # and blank lines are ignored.
-# These run against whichever OS you selected when triggering the workflow -
-# make sure each technique actually has a test defined for that platform.
-
-T1059.004
-T1082
-T1087
