@@ -220,12 +220,12 @@ jobs:
               DOCUMENT="AWS-RunPowerShellScript"
               LINES=(
                 'Import-Module "C:\AtomicRedTeam\invoke-atomicredteam\Invoke-AtomicRedTeam.psd1" -Force'
-                "Invoke-AtomicTest $TECH"
+                "Invoke-AtomicTest $TECH -PathToAtomicsFolder 'C:\AtomicRedTeam\atomics'"
               )
             else
               DOCUMENT="AWS-RunShellScript"
               LINES=(
-                "pwsh -Command \"Import-Module '/opt/AtomicRedTeam/invoke-atomicredteam/Invoke-AtomicRedTeam.psd1' -Force; Invoke-AtomicTest $TECH\""
+                "pwsh -Command \"Import-Module '/opt/AtomicRedTeam/invoke-atomicredteam/Invoke-AtomicRedTeam.psd1' -Force; Invoke-AtomicTest $TECH -PathToAtomicsFolder '/opt/AtomicRedTeam/atomics'\""
               )
             fi
 
